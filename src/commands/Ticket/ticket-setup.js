@@ -4,33 +4,30 @@ import {
     ChannelType, 
     EmbedBuilder, 
     ActionRowBuilder, 
-    ButtonBuilder, 
-    ButtonStyle, 
+    StringSelectMenuBuilder,
     MessageFlags 
 } from 'discord.js';
-import { getColor } from '../../config/bot.js';
-import { errorEmbed } from '../../utils/embeds.js';
-import { InteractionHelper } from '../../utils/interactionHelper.js';
 import { logger } from '../../utils/logger.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
 
 export default {
     data: new SlashCommandBuilder()
         .setName('ticket-setup')
-        .setDescription('Erstellt das optimierte Ticket-Support-Panel')
+        .setDescription('Erstellt das Aztecas Multi-Ticket-System')
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
         .addChannelOption(option =>
             option.setName('channel')
-                .setDescription('In welchem Kanal soll das Panel gesendet werden?')
+                .setDescription('Wo soll das Panel hin?')
                 .addChannelTypes(ChannelType.GuildText)
-                .setRequired(true))
-        .addRoleOption(option =>
-            option.setName('team-role')
-                .setDescription('Welche Rolle hat Zugriff auf die Tickets?')
                 .setRequired(true))
         .addChannelOption(option =>
             option.setName('category')
-                .setDescription('In welcher Kategorie sollen Tickets geöffnet werden?')
+                .setDescription('In welcher Kategorie sollen die Tickets landen?')
                 .addChannelTypes(ChannelType.GuildCategory)
+                .setRequired(true))
+        .addRoleOption(option =>
+            option.setName('team-role')
+                .setDescription('Welche Rolle bearbeitet die Tickets?')
                 .setRequired(true)),
 
     async execute(interaction) {
@@ -38,48 +35,50 @@ export default {
         if (!deferSuccess) return;
 
         const targetChannel = interaction.options.getChannel('channel');
-        const teamRole = interaction.options.getRole('team-role');
         const category = interaction.options.getChannel('category');
+        const teamRole = interaction.options.getRole('team-role');
 
-        try {
-            // Das neue, stark verbesserte Aztecas-Embed
-            const panelEmbed = new EmbedBuilder()
-                .setColor('#00FFFF') // Markantes Aztecas-Türkis
-                .setTitle('🦅 AZTECAS HAUPTQUARTIER')
-                .setDescription(
-                    '💥 **Zentraler Support- & Funkdienst**\n' +
-                    'Du hast ein dringendes Anliegen, ein wichtiges Geschäft zu besprechen oder benötigst die Aufmerksamkeit der Führungsebene? Hier bist du richtig.\n\n' +
-                    '📌 **Hinweise vor dem Öffnen:**\n' +
-                    '• Beschreibe dein Anliegen direkt sachlich und präzise.\n' +
-                    '• Unnötiges Spammen oder Missbrauch des Funks wird sanktioniert.\n\n' +
-                    '*Klicke auf den Button unten, um eine geschützte Verbindung herzustellen.*'
-                )
-                .addFields({ name: '⚡ Status', value: '🟢 Bereit / Online', inline: true })
-                .setTimestamp()
-                .setFooter({ text: 'Barrio Netzwerksicherheit', iconURL: interaction.guild.iconURL() });
+        const panelEmbed = new EmbedBuilder()
+            .setColor('#00FFFF')
+            .setTitle('🦅 AZTECAS | FUNKZENTRALE')
+            .setDescription(
+                '¡Hola Hermano! Du hast ein Anliegen? Wähle die passende Frequenz im Menü unten aus.\n\n' +
+                '📩 **Bewerbung:** Du willst Blut für die Aztecas vergießen?\n' +
+                '🛠️ **Support:** Probleme im Barrio oder mit dem Funk?\n' +
+                '📁 **Sonstiges:** Alles, was in keine Schublade passt.\n\n' +
+                '*Missbrauch wird mit einem Ticket in die Wüste bestraft!*'
+            )
+            .setImage('https://i.imgur.com/your-aztecas-banner.png') // Falls du ein Banner hast
+            .setTimestamp()
+            .setFooter({ text: 'Barrio Netzwerksicherheit', iconURL: interaction.guild.iconURL() });
 
-            // Button-Daten (IDs werden in der customId gespeichert, um die DB zu entlasten)
-            const openButton = new ButtonBuilder()
-                .setCustomId(`ticket_open:${teamRole.id}:${category.id}`)
-                .setLabel('Funkverbindung aufbauen')
-                .setEmoji('📟')
-                .setStyle(ButtonStyle.Primary);
+        const menu = new StringSelectMenuBuilder()
+            .setCustomId(`ticket_select:${teamRole.id}:${category.id}`)
+            .setPlaceholder('Wähle dein Anliegen...')
+            .addOptions([
+                {
+                    label: 'Bewerbung',
+                    description: 'Werde Teil der Familie',
+                    value: 'bewerbung',
+                    emoji: '📝',
+                },
+                {
+                    label: 'Support / Hilfe',
+                    description: 'Probleme oder Fragen',
+                    value: 'support',
+                    emoji: '🛠️',
+                },
+                {
+                    label: 'Sonstiges / Beschwerde',
+                    description: 'Alles andere',
+                    value: 'sonstiges',
+                    emoji: '📁',
+                },
+            ]);
 
-            const row = new ActionRowBuilder().addComponents(openButton);
+        const row = new ActionRowBuilder().addComponents(menu);
 
-            await targetChannel.send({ embeds: [panelEmbed], components: [row] });
-
-            logger.info(`[Ticket] Setup abgeschlossen von ${interaction.user.tag} in ${interaction.guild.name}`);
-
-            await InteractionHelper.safeEditReply(interaction, {
-                content: `✅ Das neue Ticket-Panel wurde erfolgreich in ${targetChannel} eingerichtet!`
-            });
-
-        } catch (error) {
-            logger.error('[Ticket] Fehler beim Ticket-Setup:', error);
-            await InteractionHelper.safeEditReply(interaction, {
-                embeds: [errorEmbed('Setup fehlgeschlagen', 'Das Panel konnte nicht gesendet werden.')]
-            });
-        }
+        await targetChannel.send({ embeds: [panelEmbed], components: [row] });
+        await InteractionHelper.safeEditReply(interaction, { content: '✅ Multi-Ticket-System eingerichtet!' });
     }
 };
