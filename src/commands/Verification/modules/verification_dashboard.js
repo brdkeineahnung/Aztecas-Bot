@@ -117,9 +117,9 @@ function buildButtonRow(cfg, guildId, disabled = false) {
     return new ActionRowBuilder().addComponents(
         new ButtonBuilder()
             .setCustomId(`verif_cfg_toggle_${guildId}`)
-            .setLabel('Verification')
-            .setStyle(systemOn ? ButtonStyle.Success : ButtonStyle.Danger)
-            .setEmoji('🔒')
+            .setLabel(systemOn ? 'Disable Verification' : 'Enable Verification')
+            .setStyle(systemOn ? ButtonStyle.Danger : ButtonStyle.Success)
+            .setEmoji(systemOn ? '🔓' : '🔒')
             .setDisabled(disabled),
     );
 }
@@ -129,8 +129,6 @@ function buildButtonRow(cfg, guildId, disabled = false) {
 async function refreshDashboard(rootInteraction, cfg, guildId, client) {
     try {
         const selectMenu = buildSelectMenu(guildId);
-        
-        // Get verified user count and conflict summary
         let verifiedUserCount = 0;
         let conflictSummary = '';
         
@@ -190,8 +188,6 @@ export default {
             await InteractionHelper.safeDefer(interaction, { flags: MessageFlags.Ephemeral });
 
             const selectMenu = buildSelectMenu(guildId);
-
-            // Get verified user count and conflict summary
             let verifiedUserCount = 0;
             let conflictSummary = '';
             
@@ -228,8 +224,7 @@ export default {
 
             const collector = interaction.channel.createMessageComponentCollector({
                 componentType: ComponentType.StringSelect,
-                filter: i =>
-                    i.user.id === interaction.user.id && i.customId === `verif_cfg_${guildId}`,
+                filter: i => i.user.id === interaction.user.id && i.customId === `verif_cfg_${guildId}`,
                 time: 600_000,
             });
 
@@ -257,10 +252,9 @@ export default {
                         logger.error('Unexpected verification dashboard error:', error);
                     }
 
-                    const errorMessage =
-                        error instanceof TitanBotError
-                            ? error.userMessage || 'An error occurred while processing your selection.'
-                            : 'An unexpected error occurred while updating the configuration.';
+                    const errorMessage = error instanceof TitanBotError
+                        ? error.userMessage || 'An error occurred while processing your selection.'
+                        : 'An unexpected error occurred while updating the configuration.';
 
                     if (!selectInteraction.replied && !selectInteraction.deferred) {
                         await selectInteraction.deferUpdate().catch(() => {});
@@ -275,12 +269,9 @@ export default {
                 }
             });
 
-            // ── Button collector for toggle ──────────────────────────────────
             const btnCollector = interaction.channel.createMessageComponentCollector({
                 componentType: ComponentType.Button,
-                filter: i =>
-                    i.user.id === interaction.user.id &&
-                    i.customId === `verif_cfg_toggle_${guildId}`,
+                filter: i => i.user.id === interaction.user.id && i.customId === `verif_cfg_toggle_${guildId}`,
                 time: 600_000,
             });
 
@@ -295,7 +286,6 @@ export default {
                 const wasEnabled = cfg.enabled !== false;
                 const autoVerifyEnabled = Boolean(guildConfig.verification?.autoVerify?.enabled);
 
-                // Prevent enabling Verification if AutoVerify is enabled
                 if (!wasEnabled && autoVerifyEnabled) {
                     await btnInteraction.followUp({
                         embeds: [errorEmbed(
@@ -309,7 +299,6 @@ export default {
 
                 cfg.enabled = !wasEnabled;
 
-                // Disabling — remove the live panel message from the channel
                 if (!cfg.enabled && cfg.channelId && cfg.messageId) {
                     const channel = interaction.guild.channels.cache.get(cfg.channelId);
                     if (channel) {
@@ -322,7 +311,6 @@ export default {
                     }
                 }
 
-                // Re-enabling — re-post the verification panel in the configured channel
                 if (cfg.enabled && cfg.channelId) {
                     const channel = interaction.guild.channels.cache.get(cfg.channelId);
                     if (channel) {
@@ -422,8 +410,7 @@ async function handleChannel(selectInteraction, rootInteraction, cfg, guildId, c
 
     const chanCollector = rootInteraction.channel.createMessageComponentCollector({
         componentType: ComponentType.ChannelSelect,
-        filter: i =>
-            i.user.id === selectInteraction.user.id && i.customId === 'verif_cfg_channel',
+        filter: i => i.user.id === selectInteraction.user.id && i.customId === 'verif_cfg_channel',
         time: 60_000,
         max: 1,
     });
@@ -445,7 +432,6 @@ async function handleChannel(selectInteraction, rootInteraction, cfg, guildId, c
             return;
         }
 
-        // Delete old panel if it exists
         if (cfg.channelId && cfg.messageId) {
             const oldChannel = rootInteraction.guild.channels.cache.get(cfg.channelId);
             if (oldChannel) {
@@ -458,7 +444,6 @@ async function handleChannel(selectInteraction, rootInteraction, cfg, guildId, c
             }
         }
 
-        // Post new panel in the new channel (only if system is enabled)
         if (cfg.enabled !== false) {
             try {
                 const verifyEmbed = new EmbedBuilder()
@@ -531,8 +516,7 @@ async function handleRole(selectInteraction, rootInteraction, cfg, guildId, clie
 
     const roleCollector = rootInteraction.channel.createMessageComponentCollector({
         componentType: ComponentType.RoleSelect,
-        filter: i =>
-            i.user.id === selectInteraction.user.id && i.customId === 'verif_cfg_role',
+        filter: i => i.user.id === selectInteraction.user.id && i.customId === 'verif_cfg_role',
         time: 60_000,
         max: 1,
     });
@@ -618,8 +602,7 @@ async function handleMessage(selectInteraction, rootInteraction, cfg, guildId, c
 
         const submitted = await selectInteraction
             .awaitModalSubmit({
-                filter: i =>
-                    i.customId === 'verif_cfg_message' && i.user.id === selectInteraction.user.id,
+                filter: i => i.customId === 'verif_cfg_message' && i.user.id === selectInteraction.user.id,
                 time: 120_000,
             })
             .catch(() => null);
@@ -642,7 +625,6 @@ async function handleMessage(selectInteraction, rootInteraction, cfg, guildId, c
         await refreshDashboard(rootInteraction, cfg, guildId, client);
     } catch (error) {
         logger.error('Error in handleMessage:', error);
-        // Silently fail - modal display failed, user can try again
     }
 }
 
@@ -670,8 +652,7 @@ async function handleButtonText(selectInteraction, rootInteraction, cfg, guildId
 
         const submitted = await selectInteraction
             .awaitModalSubmit({
-                filter: i =>
-                    i.customId === 'verif_cfg_button_text' && i.user.id === selectInteraction.user.id,
+                filter: i => i.customId === 'verif_cfg_button_text' && i.user.id === selectInteraction.user.id,
                 time: 120_000,
             })
             .catch(() => null);
@@ -694,6 +675,5 @@ async function handleButtonText(selectInteraction, rootInteraction, cfg, guildId
         await refreshDashboard(rootInteraction, cfg, guildId, client);
     } catch (error) {
         logger.error('Error in handleButtonText:', error);
-        // Silently fail - modal display failed, user can try again
     }
 }
