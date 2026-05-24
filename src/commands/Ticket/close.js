@@ -6,15 +6,16 @@ import { handleInteractionError } from '../../utils/errorHandler.js';
 import { InteractionHelper } from '../../utils/interactionHelper.js';
 import { getTicketPermissionContext } from '../../utils/ticketPermissions.js';
 import { closeTicket } from '../../services/ticket.js';
+
 export default {
     data: new SlashCommandBuilder()
         .setName("close")
-        .setDescription("Closes the current ticket.")
+        .setDescription("Schließt das aktuelle Ticket.")
         .setDMPermission(false)
         .addStringOption((option) =>
             option
                 .setName("reason")
-                .setDescription("The reason for closing the ticket.")
+                .setDescription("Der Grund für das Schließen des Tickets.")
                 .setRequired(false),
         ),
 
@@ -31,8 +32,8 @@ export default {
                 return await InteractionHelper.safeEditReply(interaction, {
                     embeds: [
                         errorEmbed(
-                            "Not a Ticket Channel",
-                            "This command can only be used in a valid ticket channel.",
+                            "Kein Ticket-Kanal",
+                            "Dieser Befehl kann nur in einem gültigen Ticket-Kanal verwendet werden.",
                         ),
                     ],
                 });
@@ -42,8 +43,8 @@ export default {
                 return await InteractionHelper.safeEditReply(interaction, {
                     embeds: [
                         errorEmbed(
-                            "Permission Denied",
-                            "You need the `Manage Channels` permission, the configured `Ticket Staff Role`, or be the ticket creator to close this ticket.",
+                            "Zugriff verweigert",
+                            "Du benötigst die Berechtigung `Kanäle verwalten`, die konfigurierte `Team-Rolle` oder musst der Ersteller des Tickets sein, um dieses Ticket zu schließen.",
                         ),
                     ],
                 });
@@ -52,12 +53,12 @@ export default {
             const channel = interaction.channel;
             const reason =
                 interaction.options?.getString("reason") ||
-                "Closed via command without a specific reason.";
+                "Per Befehl ohne spezifischen Grund geschlossen.";
 
             const result = await closeTicket(channel, interaction.user, reason);
             
             if (!result.success) {
-                logger.warn('Ticket close failed - not a valid ticket channel', {
+                logger.warn('Ticket-Schließung fehlgeschlagen - Kein gültiger Ticket-Kanal', {
                     userId: interaction.user.id,
                     channelId: channel.id,
                     guildId: interaction.guildId,
@@ -66,8 +67,8 @@ export default {
                 return await InteractionHelper.safeEditReply(interaction, {
                     embeds: [
                         errorEmbed(
-                            "Not a Ticket Channel",
-                            result.error || "This command can only be used in a valid ticket channel.",
+                            "Kein Ticket-Kanal",
+                            result.error || "Dieser Befehl kann nur in einem gültigen Ticket-Kanal verwendet werden.",
                         ),
                     ],
                 });
@@ -76,13 +77,13 @@ export default {
             await InteractionHelper.safeEditReply(interaction, {
                 embeds: [
                     successEmbed(
-                        "Ticket Closed!",
-                        "This ticket has been closed successfully.",
+                        "Ticket geschlossen!",
+                        "Dieses Ticket wurde erfolgreich geschlossen.",
                     ),
                 ],
             });
 
-            logger.info('Ticket closed successfully', {
+            logger.info('Ticket erfolgreich geschlossen', {
                 userId: interaction.user.id,
                 userTag: interaction.user.tag,
                 channelId: channel.id,
@@ -93,7 +94,7 @@ export default {
             });
 
         } catch (error) {
-            logger.error('Error executing close command', {
+            logger.error('Fehler beim Ausführen des Close-Befehls', {
                 error: error.message,
                 stack: error.stack,
                 userId: interaction.user.id,
@@ -108,6 +109,5 @@ export default {
         }
     },
 };
-
 
 
