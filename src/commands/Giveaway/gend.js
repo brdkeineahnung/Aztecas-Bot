@@ -12,15 +12,14 @@ import { logEvent, EVENT_TYPES } from '../../services/loggingService.js';
 import { InteractionHelper } from '../../utils/interactionHelper.js';
 
 export default {
+    // Registrierung des Slash-Commands auf Deutsch
     data: new SlashCommandBuilder()
-        .setName("gend")
-        .setDescription(
-            "Ends an active giveaway immediately and picks the winner(s).",
-        )
+        .setName("vbeenden")
+        .setDescription("Beendet eine aktive Verlosung sofort und zieht die Gewinner.")
         .addStringOption((option) =>
             option
-                .setName("messageid")
-                .setDescription("The message ID of the giveaway to end.")
+                .setName("nachrichtenid")
+                .setDescription("Die Nachrichten-ID (Message ID) der Verlosung, die beendet werden soll.")
                 .setRequired(true),
         )
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
@@ -32,7 +31,7 @@ export default {
                 throw new TitanBotError(
                     'Giveaway command used outside guild',
                     ErrorTypes.VALIDATION,
-                    'This command can only be used in a server.',
+                    'Dieser Befehl kann nur auf dem Aztecas-Server genutzt werden, Amigo.',
                     { userId: interaction.user.id }
                 );
             }
@@ -42,21 +41,21 @@ export default {
                 throw new TitanBotError(
                     'User lacks ManageGuild permission',
                     ErrorTypes.PERMISSION,
-                    "You need the 'Manage Server' permission to end a giveaway.",
+                    "Du gehörst nicht zum Management. Dir fehlen die Rechte, um Verlosungen zu beenden.",
                     { userId: interaction.user.id, guildId: interaction.guildId }
                 );
             }
 
             logger.info(`Giveaway end initiated by ${interaction.user.tag} in guild ${interaction.guildId}`);
 
-            const messageId = interaction.options.getString("messageid");
+            const messageId = interaction.options.getString("nachrichtenid");
 
             
             if (!messageId || !/^\d+$/.test(messageId)) {
                 throw new TitanBotError(
                     'Invalid message ID format',
                     ErrorTypes.VALIDATION,
-                    'Please provide a valid message ID.',
+                    'Bitte gib eine gültige Nachrichten-ID an, Loco.',
                     { providedId: messageId }
                 );
             }
@@ -68,7 +67,7 @@ export default {
                 throw new TitanBotError(
                     `Giveaway not found: ${messageId}`,
                     ErrorTypes.VALIDATION,
-                    "No giveaway was found with that message ID in the database.",
+                    "Unter dieser ID wurde keine aktive Verlosung in der Datenbank gefunden.",
                     { messageId, guildId: interaction.guildId }
                 );
             }
@@ -96,7 +95,7 @@ export default {
                 throw new TitanBotError(
                     `Channel not found: ${updatedGiveaway.channelId}`,
                     ErrorTypes.VALIDATION,
-                    "Could not find the channel where the giveaway was hosted. The giveaway state has been updated.",
+                    "Der Kanal der Verlosung wurde nicht gefunden. Der Status in der Datenbank wurde trotzdem aktualisiert.",
                     { channelId: updatedGiveaway.channelId, messageId }
                 );
             }
@@ -112,7 +111,7 @@ export default {
                 throw new TitanBotError(
                     `Message not found: ${messageId}`,
                     ErrorTypes.VALIDATION,
-                    "Could not find the giveaway message. The giveaway state has been updated.",
+                    "Die originale Nachricht der Verlosung wurde nicht gefunden. Der Status wurde trotzdem aktualisiert.",
                     { messageId, channelId: updatedGiveaway.channelId }
                 );
             }
@@ -129,7 +128,7 @@ export default {
             const newRow = createGiveawayButtons(true);
 
             await message.edit({
-                content: "🎉 **GIVEAWAY ENDED** 🎉",
+                content: "🎉 **VERLOSUNG BEENDET** 🎉",
                 embeds: [newEmbed],
                 components: [newRow],
             });
@@ -140,7 +139,7 @@ export default {
                     .map((id) => `<@${id}>`)
                     .join(", ");
                 const winnerPingMsg = await channel.send({
-                    content: `🎉 CONGRATULATIONS ${winnerMentions}! You won the **${updatedGiveaway.prize}** giveaway! Please contact the host <@${updatedGiveaway.hostId}> to claim your prize.`,
+                    content: `🎉 **HERZLICHEN GLÜCKWUNSCH** ${winnerMentions}! Du hast die Verlosung für **${updatedGiveaway.prize}** gewonnen! Melde dich im Barrio bei <@${updatedGiveaway.hostId}>, um deinen Gewinn abzuholen!`,
                 });
                 updatedGiveaway.winnerPingMessageId = winnerPingMsg.id;
                 await saveGiveaway(interaction.client, interaction.guildId, updatedGiveaway);
@@ -154,22 +153,22 @@ export default {
                         guildId: interaction.guildId,
                         eventType: EVENT_TYPES.GIVEAWAY_WINNER,
                         data: {
-                            description: `Giveaway ended with ${winners.length} winner(s)`,
+                            description: `Verlosung beendet mit ${winners.length} Gewinner(n)`,
                             channelId: channel.id,
                             userId: interaction.user.id,
                             fields: [
                                 {
-                                    name: '🎁 Prize',
-                                    value: updatedGiveaway.prize || 'Mystery Prize!',
+                                    name: '🎁 Gewinn',
+                                    value: updatedGiveaway.prize || 'Geheimer Preis!',
                                     inline: true
                                 },
                                 {
-                                    name: '🏆 Winners',
+                                    name: '🏆 Gewinner',
                                     value: winnerMentions,
                                     inline: false
                                 },
                                 {
-                                    name: '👥 Entries',
+                                    name: '👥 Teilnehmer',
                                     value: endResult.participantCount.toString(),
                                     inline: true
                                 }
@@ -181,7 +180,7 @@ export default {
                 }
             } else {
                 await channel.send({
-                    content: `The giveaway for **${updatedGiveaway.prize}** has ended with no valid entries.`,
+                    content: `Die Verlosung für **${updatedGiveaway.prize}** ist beendet, aber es gab keine gültigen Teilnehmer, Amigos.`,
                 });
                 logger.info(`Giveaway ended with no winners: ${messageId}`);
             }
@@ -191,8 +190,8 @@ export default {
             return InteractionHelper.safeReply(interaction, {
                 embeds: [
                     successEmbed(
-                        "Giveaway Ended ✅",
-                        `Successfully ended the giveaway for **${updatedGiveaway.prize}** in ${channel}. Selected ${winners.length} winner(s) from ${endResult.participantCount} entries.`,
+                        "Verlosung beendet ✅",
+                        `Die Verlosung für **${updatedGiveaway.prize}** in ${channel} wurde erfolgreich beendet. Es wurden **${winners.length}** Gewinner aus insgesamt **${endResult.participantCount}** Einträgen gezogen.`,
                     ),
                 ],
                 flags: MessageFlags.Ephemeral,
@@ -201,12 +200,11 @@ export default {
         } catch (error) {
             await handleInteractionError(interaction, error, {
                 type: 'command',
-                commandName: 'gend',
+                commandName: 'vbeenden',
                 context: 'giveaway_end'
             });
         }
     },
 };
-
 
 
