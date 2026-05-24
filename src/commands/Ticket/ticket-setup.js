@@ -7,8 +7,6 @@ import {
     StringSelectMenuBuilder,
     MessageFlags 
 } from 'discord.js';
-import { logger } from '../../utils/logger.js';
-import { InteractionHelper } from '../../utils/interactionHelper.js';
 
 export default {
     data: new SlashCommandBuilder()
@@ -31,54 +29,43 @@ export default {
                 .setRequired(true)),
 
     async execute(interaction) {
-        const deferSuccess = await InteractionHelper.safeDefer(interaction, { flags: MessageFlags.Ephemeral });
-        if (!deferSuccess) return;
+        // Direktes Aufschieben über Standard-Discord.js (Verhindert "Anwendung reagiert nicht")
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral }).catch(() => {});
 
         const targetChannel = interaction.options.getChannel('channel');
         const category = interaction.options.getChannel('category');
         const teamRole = interaction.options.getRole('team-role');
 
-        const panelEmbed = new EmbedBuilder()
-            .setColor('#00FFFF')
-            .setTitle('🦅 AZTECAS | FUNKZENTRALE')
-            .setDescription(
-                '¡Hola Hermano! Du hast ein Anliegen? Wähle die passende Frequenz im Menü unten aus.\n\n' +
-                '📩 **Bewerbung:** Du willst Blut für die Aztecas vergießen?\n' +
-                '🛠️ **Support:** Probleme im Barrio oder mit dem Funk?\n' +
-                '📁 **Sonstiges:** Alles, was in keine Schublade passt.\n\n' +
-                '*Missbrauch wird mit einem Ticket in die Wüste bestraft!*'
-            )
-            .setImage('https://i.imgur.com/your-aztecas-banner.png') // Falls du ein Banner hast
-            .setTimestamp()
-            .setFooter({ text: 'Barrio Netzwerksicherheit', iconURL: interaction.guild.iconURL() });
+        try {
+            const panelEmbed = new EmbedBuilder()
+                .setColor('#00FFFF')
+                .setTitle('🦅 AZTECAS | FUNKZENTRALE')
+                .setDescription(
+                    '¡Hola Hermano! Du hast ein Anliegen? Wähle die passende Frequenz im Menü unten aus.\n\n' +
+                    '📩 **Bewerbung:** Du willst Blut für die Aztecas vergießen?\n' +
+                    '🛠️ **Support:** Probleme im Barrio oder mit dem Funk?\n' +
+                    '📁 **Sonstiges:** Alles, was in keine Schublade passt.\n\n' +
+                    '*Missbrauch wird mit einem Ticket in die Wüste bestraft!*'
+                )
+                .setTimestamp();
 
-        const menu = new StringSelectMenuBuilder()
-            .setCustomId(`ticket_select:${teamRole.id}:${category.id}`)
-            .setPlaceholder('Wähle dein Anliegen...')
-            .addOptions([
-                {
-                    label: 'Bewerbung',
-                    description: 'Werde Teil der Familie',
-                    value: 'bewerbung',
-                    emoji: '📝',
-                },
-                {
-                    label: 'Support / Hilfe',
-                    description: 'Probleme oder Fragen',
-                    value: 'support',
-                    emoji: '🛠️',
-                },
-                {
-                    label: 'Sonstiges / Beschwerde',
-                    description: 'Alles andere',
-                    value: 'sonstiges',
-                    emoji: '📁',
-                },
-            ]);
+            const menu = new StringSelectMenuBuilder()
+                .setCustomId(`ticket_select:${teamRole.id}:${category.id}`)
+                .setPlaceholder('Wähle dein Anliegen...')
+                .addOptions([
+                    { label: 'Bewerbung', description: 'Werde Teil der Familie', value: 'bewerbung', emoji: '📝' },
+                    { label: 'Support / Hilfe', description: 'Probleme oder Fragen', value: 'support', emoji: '🛠️' },
+                    { label: 'Sonstiges / Beschwerde', description: 'Alles andere', value: 'sonstiges', emoji: '📁' },
+                ]);
 
-        const row = new ActionRowBuilder().addComponents(menu);
+            const row = new ActionRowBuilder().addComponents(menu);
 
-        await targetChannel.send({ embeds: [panelEmbed], components: [row] });
-        await InteractionHelper.safeEditReply(interaction, { content: '✅ Multi-Ticket-System eingerichtet!' });
+            await targetChannel.send({ embeds: [panelEmbed], components: [row] });
+            await interaction.editReply({ content: '✅ Multi-Ticket-System eingerichtet!' });
+
+        } catch (error) {
+            console.error('Fehler beim Setup:', error);
+            await interaction.editReply({ content: '❌ Setup fehlgeschlagen. Überprüfe die Bot-Rechte.' });
+        }
     }
 };
