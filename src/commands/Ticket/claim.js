@@ -6,10 +6,11 @@ import { handleInteractionError } from '../../utils/errorHandler.js';
 import { InteractionHelper } from '../../utils/interactionHelper.js';
 import { getTicketPermissionContext } from '../../utils/ticketPermissions.js';
 import { claimTicket } from '../../services/ticket.js';
+
 export default {
     data: new SlashCommandBuilder()
         .setName("claim")
-        .setDescription("Claims an open ticket, assigning it to you.")
+        .setDescription("Übernimmt ein offenes Ticket und weist es dir zu.")
         .setDMPermission(false),
 
     async execute(interaction, guildConfig, client) {
@@ -25,8 +26,8 @@ export default {
                 return await InteractionHelper.safeEditReply(interaction, {
                     embeds: [
                         errorEmbed(
-                            "Not a Ticket Channel",
-                            "This command can only be used in a valid ticket channel.",
+                            "Kein Ticket-Kanal",
+                            "Dieser Befehl kann nur in einem gültigen Ticket-Kanal verwendet werden.",
                         ),
                     ],
                 });
@@ -36,8 +37,8 @@ export default {
                 return await InteractionHelper.safeEditReply(interaction, {
                     embeds: [
                         errorEmbed(
-                            "Permission Denied",
-                            "You need the `Manage Channels` permission or the configured `Ticket Staff Role` to claim tickets.",
+                            "Zugriff verweigert",
+                            "Du benötigst die Berechtigung `Kanäle verwalten` oder die konfigurierte `Team-Rolle`, um Tickets zu übernehmen.",
                         ),
                     ],
                 });
@@ -47,7 +48,7 @@ export default {
             const result = await claimTicket(channel, interaction.user);
             
             if (!result.success) {
-                logger.warn('Ticket claim failed - not a valid ticket channel', {
+                logger.warn('Ticket-Übernahme fehlgeschlagen - Kein gültiger Ticket-Kanal', {
                     userId: interaction.user.id,
                     channelId: channel.id,
                     guildId: interaction.guildId,
@@ -56,8 +57,8 @@ export default {
                 return await InteractionHelper.safeEditReply(interaction, {
                     embeds: [
                         errorEmbed(
-                            "Not a Ticket Channel",
-                            result.error || "This command can only be used in a valid ticket channel.",
+                            "Kein Ticket-Kanal",
+                            result.error || "Dieser Befehl kann nur in einem gültigen Ticket-Kanal verwendet werden.",
                         ),
                     ],
                 });
@@ -66,13 +67,13 @@ export default {
             await InteractionHelper.safeEditReply(interaction, {
                 embeds: [
                     successEmbed(
-                        "Ticket Claimed!",
-                        "You have successfully claimed this ticket.",
+                        "Ticket übernommen!",
+                        "Du hast dieses Ticket erfolgreich übernommen.",
                     ),
                 ],
             });
 
-            logger.info('Ticket claimed successfully', {
+            logger.info('Ticket erfolgreich übernommen', {
                 userId: interaction.user.id,
                 userTag: interaction.user.tag,
                 channelId: channel.id,
@@ -82,7 +83,7 @@ export default {
             });
 
         } catch (error) {
-            logger.error('Error executing claim command', {
+            logger.error('Fehler beim Ausführen des Claim-Befehls', {
                 error: error.message,
                 stack: error.stack,
                 userId: interaction.user.id,
@@ -97,6 +98,3 @@ export default {
         }
     },
 };
-
-
-
