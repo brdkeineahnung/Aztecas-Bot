@@ -10,20 +10,20 @@ import { updateTicketPriority } from '../../services/ticket.js';
 export default {
     data: new SlashCommandBuilder()
         .setName("priority")
-        .setDescription("Sets the priority level for the current support ticket.")
+        .setDescription("Setzt die Prioritätsstufe für das aktuelle Support-Ticket.")
         .addStringOption((option) =>
             option
                 .setName("level")
-                .setDescription("The priority level for the ticket.")
+                .setDescription("Die Prioritätsstufe für das Ticket.")
                 .setRequired(true)
                 .addChoices(
-                    { name: "🔴 Urgent", value: "urgent" },
-                    { name: "🟠 High", value: "high" },
-                    { name: "🟡 Medium", value: "medium" },
-                    { name: "🟢 Low", value: "low" },
-                    { name: "⚪ None", value: "none" },
+                    { name: "🔴 Dringend", value: "urgent" },
+                    { name: "🟠 Hoch", value: "high" },
+                    { name: "🟡 Mittel", value: "medium" },
+                    { name: "🟢 Niedrig", value: "low" },
+                    { name: "⚪ Keine", value: "none" },
                 ),
-            )
+        )
         .setDMPermission(false),
     category: "Ticket",
 
@@ -40,8 +40,8 @@ export default {
                 return await InteractionHelper.safeEditReply(interaction, {
                     embeds: [
                         errorEmbed(
-                            "Not a Ticket Channel",
-                            "This command can only be used in a valid ticket channel.",
+                            "Kein Ticket-Kanal",
+                            "Dieser Befehl kann nur in einem gültigen Ticket-Kanal verwendet werden.",
                         ),
                     ],
                 });
@@ -51,8 +51,8 @@ export default {
                 return await InteractionHelper.safeEditReply(interaction, {
                     embeds: [
                         errorEmbed(
-                            "Permission Denied",
-                            "You need the `Manage Channels` permission or the configured `Ticket Staff Role` to change ticket priority.",
+                            "Zugriff verweigert",
+                            "Du benötigst die Berechtigung `Kanäle verwalten` oder die konfigurierte `Team-Rolle`, um die Ticket-Priorität zu ändern.",
                         ),
                     ],
                 });
@@ -62,7 +62,7 @@ export default {
             const result = await updateTicketPriority(interaction.channel, priorityLevel, interaction.user);
             
             if (!result.success) {
-                logger.warn('Priority update failed - not a valid ticket channel', {
+                logger.warn('Prioritäts-Update fehlgeschlagen - Kein gültiger Ticket-Kanal', {
                     userId: interaction.user.id,
                     channelId: interaction.channel.id,
                     guildId: interaction.guildId,
@@ -71,23 +71,32 @@ export default {
                 return await InteractionHelper.safeEditReply(interaction, {
                     embeds: [
                         errorEmbed(
-                            "Not a Ticket Channel",
-                            result.error || "This command can only be used in a valid ticket channel.",
+                            "Kein Ticket-Kanal",
+                            result.error || "Dieser Befehl kann nur in einem gültigen Ticket-Kanal verwendet werden.",
                         ),
                     ],
                 });
             }
 
+            // Übersetzung der internen Values für die Erfolgsmeldung im Discord-Interface
+            const priorityNames = {
+                urgent: "DRINGEND",
+                high: "HOCH",
+                medium: "MITTEL",
+                low: "NIEDRIG",
+                none: "KEINE"
+            };
+
             await InteractionHelper.safeEditReply(interaction, {
                 embeds: [
                     successEmbed(
-                        "Priority Updated",
-                        `Ticket priority set to **${priorityLevel.toUpperCase()}**.`,
+                        "Priorität aktualisiert",
+                        `Die Ticket-Priorität wurde erfolgreich auf **${priorityNames[priorityLevel] || priorityLevel.toUpperCase()}** gesetzt.`,
                     ),
                 ],
             });
 
-            logger.info('Ticket priority updated successfully', {
+            logger.info('Ticket-Priorität erfolgreich aktualisiert', {
                 userId: interaction.user.id,
                 userTag: interaction.user.tag,
                 channelId: interaction.channel.id,
@@ -98,7 +107,7 @@ export default {
             });
 
         } catch (error) {
-            logger.error('Error executing priority command', {
+            logger.error('Fehler beim Ausführen des Priority-Befehls', {
                 error: error.message,
                 stack: error.stack,
                 userId: interaction.user.id,
@@ -113,7 +122,6 @@ export default {
         }
     },
 };
-
 
 
 
