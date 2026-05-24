@@ -1,24 +1,28 @@
-import { SlashCommandBuilder, PermissionFlagsBits, ChannelType, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } from 'discord.js';
+import { SlashCommandBuilder, PermissionFlagsBits, ChannelType, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 
 export default {
     data: new SlashCommandBuilder()
         .setName('lager-setup')
-        .setDescription('Erstellt das digitale Fraktionslager')
+        .setDescription('Erstellt die digitale Fraktionskammer')
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
         .addChannelOption(option =>
-            option.setName('channel').setDescription('Kanal für das Lager-Panel').addChannelTypes(ChannelType.GuildText).setRequired(true)),
+            option.setName('channel')
+                .setDescription('Kanal für das Lager')
+                .addChannelTypes(ChannelType.GuildText)
+                .setRequired(true)),
 
     async execute(interaction) {
-        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+        // Sicheres, standardmäßiges Antworten, damit Discord nicht abstürzt
+        await interaction.deferReply({ ephemeral: true }).catch(() => {});
         const channel = interaction.options.getChannel('channel');
 
         const embed = new EmbedBuilder()
             .setColor('#00FFFF')
-            .setTitle('📦 AZTECAS FRAKTIONSLAGER')
-            .setDescription('Hier wird der aktuelle Bestand an Ausrüstung im Barrio dokumentiert.')
+            .setTitle('📦 AZTECAS | FRAKTIONSLAGER')
+            .setDescription('Dokumentation der aktuellen Bestände im Barrio. Nutze die Buttons zum Ein- und Auslagern.')
             .addFields(
-                { name: '🟢 Schutzwesten', value: '📦 Anzahl: `0`', inline: true },
-                { name: '🟢 Medkits', value: '📦 Anzahl: `0`', inline: true }
+                { name: '🟢 Schutzwesten', value: ' Anzahlen: `0`', inline: true },
+                { name: '🟢 Medkits', value: ' Anzahlen: `0`', inline: true }
             )
             .setTimestamp()
             .setFooter({ text: 'Kammer-Logbuch' });
@@ -37,7 +41,8 @@ export default {
             await channel.send({ embeds: [embed], components: [row1, row2] });
             await interaction.editReply({ content: '✅ Fraktionslager erfolgreich bereitgestellt!' });
         } catch (error) {
-            await interaction.editReply({ content: '❌ Fehler beim Erstellen des Lagers.' });
+            console.error(error);
+            await interaction.editReply({ content: '❌ Fehler beim Senden des Lagers. Fehlende Bot-Rechte im Kanal?' });
         }
     }
 };
