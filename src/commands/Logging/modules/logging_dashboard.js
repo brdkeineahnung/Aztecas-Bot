@@ -14,16 +14,17 @@ const EVENT_TYPES_BY_CATEGORY = Object.values(EVENT_TYPES).reduce((acc, eventTyp
     return acc;
 }, {});
 
+// Kategorien auf Deutsch übersetzt
 const CATEGORY_MAP = [
     ['moderation',   '🔨 Moderation'],
-    ['ticket',       '🎫 Ticket Events'],
-    ['message',      '✉️ Message Events'],
-    ['role',         '🏷️ Role Events'],
-    ['member',       '👥 Member Events'],
-    ['leveling',     '📈 Leveling Events'],
-    ['reactionrole', '🎭 Reaction Role Events'],
-    ['giveaway',     '🎁 Giveaway Events'],
-    ['counter',      '📊 Counter Events'],
+    ['ticket',       '🎫 Ticket-Ereignisse'],
+    ['message',      '✉️ Nachrichten-Ereignisse'],
+    ['role',         '🏷️ Rollen-Ereignisse'],
+    ['member',       '👥 Mitglieder-Ereignisse'],
+    ['leveling',     '📈 Level-Ereignisse'],
+    ['reactionrole', '🎭 Reaktionsrollen-Ereignisse'],
+    ['giveaway',     '🎁 Verlosungs-Ereignisse'],
+    ['counter',      '📊 Zähler-Ereignisse'],
 ];
 
 function getCategoryStatus(enabledEvents, category, auditEnabled) {
@@ -36,9 +37,9 @@ function getCategoryStatus(enabledEvents, category, auditEnabled) {
 }
 
 async function formatChannelMention(guild, id) {
-    if (!id) return '`Not configured`';
+    if (!id) return '`Nicht konfiguriert`';
     const channel = guild.channels.cache.get(id) ?? await guild.channels.fetch(id).catch(() => null);
-    return channel ? channel.toString() : `⚠️ Missing (${id})`;
+    return channel ? channel.toString() : `⚠️ Fehlt (${id})`;
 }
 
 export async function buildLoggingDashboardView(interaction, client) {
@@ -62,13 +63,13 @@ export async function buildLoggingDashboardView(interaction, client) {
     }).join('\n');
 
     const embed = new EmbedBuilder()
-        .setTitle('📋 Logging Dashboard')
-        .setDescription(`Manage audit logging for **${interaction.guild.name}**. Category buttons toggle logging instantly.`)
+        .setTitle('📋 Logging-Dashboard')
+        .setDescription(`Verwalte die Protokollierung für **${interaction.guild.name}**. Die Kategorie-Buttons schalten das Logging sofort um.`)
         .setColor(auditEnabled ? getColor('success') : getColor('warning'))
         .addFields(
             {
-                name: '🧾 Audit Logging',
-                value: auditEnabled ? '✅ Enabled' : '❌ Disabled',
+                name: '🧾 Audit-Logging',
+                value: auditEnabled ? '✅ Aktiviert' : '❌ Deaktiviert',
                 inline: true,
             },
             {
@@ -82,31 +83,31 @@ export async function buildLoggingDashboardView(interaction, client) {
                 inline: true,
             },
             {
-                name: '📡 Log Channels',
+                name: '📡 Log-Kanäle',
                 value: [
-                    `**Audit:** ${auditChannel}`,
-                    `**Ticket Logs:** ${lifecycleChannel}`,
-                    `**Ticket Transcripts:** ${transcriptChannel}`,
+                    `**Audit-Logs:** ${auditChannel}`,
+                    `**Ticket-Logs:** ${lifecycleChannel}`,
+                    `**Ticket-Transkripte:** ${transcriptChannel}`,
                 ].join('\n'),
                 inline: false,
             },
             {
-                name: '📋 Event Categories',
+                name: '📋 Ereigniskategorien',
                 value: categoryLines,
                 inline: false,
             },
             {
-                name: '🧹 Ignore Filters',
-                value: `Users: **${ignoredUsers.length}**\nChannels: **${ignoredChannels.length}**`,
+                name: '🧹 Ignorierte Filter',
+                value: `Benutzer: **${ignoredUsers.length}**\nKanäle: **${ignoredChannels.length}**`,
                 inline: true,
             },
             {
-                name: '🕒 Last Refresh',
+                name: '🕒 Letzte Aktualisierung',
                 value: `<t:${Math.floor(Date.now() / 1000)}:R>`,
                 inline: true,
             },
         )
-        .setFooter({ text: 'Use /logging setchannel to configure the audit channel  •  /ticket setup or /ticket dashboard to configure ticket channels' })
+        .setFooter({ text: 'Nutze /logging setchannel für den Audit-Kanal  •  /ticket setup oder /ticket dashboard für Ticket-Kanäle' })
         .setTimestamp();
 
     const components = createLoggingDashboardComponents(loggingStatus.enabledEvents, auditEnabled);
@@ -118,7 +119,7 @@ export default {
         try {
             if (!interaction.member.permissions.has(PermissionsBitField.Flags.ManageGuild)) {
                 return InteractionHelper.safeReply(interaction, {
-                    embeds: [errorEmbed('Permission Denied', 'You need **Manage Server** permissions to view the logging dashboard.')],
+                    embeds: [errorEmbed('Rechte verweigert', 'Du gehörst nicht zum Management. Dir fehlen die Rechte für das Logging-Dashboard.')],
                 });
             }
 
@@ -128,7 +129,7 @@ export default {
         } catch (error) {
             logger.error('logging_dashboard error:', error);
             await InteractionHelper.safeEditReply(interaction, {
-                embeds: [errorEmbed('Dashboard Error', 'Failed to load the logging dashboard.')],
+                embeds: [errorEmbed('Dashboard-Fehler', 'Das Logging-Dashboard konnte nicht geladen werden.')],
             });
         }
     },
