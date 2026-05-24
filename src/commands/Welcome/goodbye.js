@@ -34,7 +34,8 @@ export default {
                         .setRequired(false))),
 
     async execute(interaction) {
-        const deferSuccess = await InteractionHelper.safeDefer(interaction);
+        // Interaktion flüchtig aufschieben (Empfohlen für Admin-Befehle)
+        const deferSuccess = await InteractionHelper.safeDefer(interaction, { flags: MessageFlags.Ephemeral });
         if (!deferSuccess) {
             logger.warn(`Goodbye interaction defer failed`, {
                 userId: interaction.user.id,
@@ -46,21 +47,23 @@ export default {
 
         const { options, guild, client } = interaction;
 
+        // Berechtigungsprüfung
         if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)) {
             return await InteractionHelper.safeEditReply(interaction, {
-                embeds: [errorEmbed('Missing Permissions', 'You need the **Manage Server** permission to use `/goodbye`.')],
-                flags: MessageFlags.Ephemeral
+                embeds: [errorEmbed('Missing Permissions', 'You need the **Manage Server** permission to use `/goodbye`.')]
             });
         }
 
         const subcommand = options.getSubcommand();
 
+        // ── Subcommand: Setup ─────────────────────────────────────────────────
         if (subcommand === 'setup') {
             const channel = options.getChannel('channel');
             const message = options.getString('message');
             const image = options.getString('image');
             const ping = options.getBoolean('ping') ?? false;
 
+            // Existierende Konfiguration prüfen
             const existingConfig = await getWelcomeConfig(client, guild.id);
             if (existingConfig?.goodbyeChannelId) {
                 logger.info(`[Goodbye] Setup blocked because config already exists in channel ${existingConfig.goodbyeChannelId} for guild ${guild.id}`);
@@ -68,34 +71,35 @@ export default {
                     embeds: [errorEmbed(
                         'Goodbye Setup Already Exists',
                         `Goodbye is already configured for <#${existingConfig.goodbyeChannelId}>. Use **/goodbye config** to customize channel, message, ping, or image.`
-                    )],
-                    flags: MessageFlags.Ephemeral
+                    )]
                 });
             }
 
-            
+            // Validierung: Nachricht leer?
             if (!message || message.trim().length === 0) {
                 logger.warn(`[Goodbye] Empty message provided by ${interaction.user.tag} in ${guild.name}`);
                 return await InteractionHelper.safeEditReply(interaction, {
-                    embeds: [errorEmbed('Invalid Input', 'Goodbye message cannot be empty')],
-                    flags: MessageFlags.Ephemeral
+                    embeds: [errorEmbed('Invalid Input', 'Goodbye message cannot be empty')]
                 });
             }
 
-            
+            // Validierung: Bild-URL valide?
             if (image) {
                 try {
-                    new URL(image);
+                    const url = new URL(image);
+                    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+                        throw new Error('Invalid protocol');
+                    }
                 } catch (e) {
                     logger.warn(`[Goodbye] Invalid image URL provided by ${interaction.user.tag}: ${image}`);
                     return await InteractionHelper.safeEditReply(interaction, {
-                        embeds: [errorEmbed('Invalid Image URL', 'Please provide a valid image URL (must start with http:// or https://')],
-                        flags: MessageFlags.Ephemeral
+                        embeds: [errorEmbed('Invalid Image URL', 'Please provide a valid image URL (must start with http:// or https://)')]
                     });
                 }
             }
 
             try {
+                // Konfiguration in der DB speichern
                 await updateWelcomeConfig(client, guild.id, {
                     goodbyeEnabled: true,
                     goodbyeChannelId: channel.id,
@@ -112,6 +116,7 @@ export default {
 
                 logger.info(`[Goodbye] Setup configured by ${interaction.user.tag} for guild ${guild.name} (${guild.id})`);
 
+                // Vorschau generieren
                 const previewMessage = formatWelcomeMessage(message, {
                     user: interaction.user,
                     guild
@@ -140,13 +145,9 @@ export default {
                         'Setup Failed',
                         'An error occurred while configuring the goodbye system. Please try again.',
                         { showDetails: true }
-                    )],
-                    flags: MessageFlags.Ephemeral
+                    )]
                 });
             }
         }
     },
 };
-
-
-
