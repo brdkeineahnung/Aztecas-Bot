@@ -16,7 +16,7 @@ import { logger } from '../../utils/logger.js';
 export default {
     data: new SlashCommandBuilder()
         .setName('ticket-setup')
-        .setDescription('Erstellt das Ticket-Support-Panel')
+        .setDescription('Erstellt das optimierte Ticket-Support-Panel')
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
         .addChannelOption(option =>
             option.setName('channel')
@@ -42,31 +42,37 @@ export default {
         const category = interaction.options.getChannel('category');
 
         try {
-            // Das Design des Ticket-Panels (Aztecas / Fraktions-Style)
+            // Das neue, stark verbesserte Aztecas-Embed
             const panelEmbed = new EmbedBuilder()
-                .setColor(getColor('primary') || '#00FFFF')
-                .setTitle('🦅 Aztecas Hauptquartier – Support & Anfragen')
+                .setColor('#00FFFF') // Markantes Aztecas-Türkis
+                .setTitle('🦅 AZTECAS HAUPTQUARTIER')
                 .setDescription(
-                    'Du musst ein wichtiges Geschäft besprechen, hast Probleme im Barrio oder willst ein Anliegen einreichen?\n\n' +
-                    'Klicke auf den Button unten, um einen abhörsicheren Funkkanal zu öffnen. Die Führungsebene wird sich um dich kümmern.'
+                    '💥 **Zentraler Support- & Funkdienst**\n' +
+                    'Du hast ein dringendes Anliegen, ein wichtiges Geschäft zu besprechen oder benötigst die Aufmerksamkeit der Führungsebene? Hier bist du richtig.\n\n' +
+                    '📌 **Hinweise vor dem Öffnen:**\n' +
+                    '• Beschreibe dein Anliegen direkt sachlich und präzise.\n' +
+                    '• Unnötiges Spammen oder Missbrauch des Funks wird sanktioniert.\n\n' +
+                    '*Klicke auf den Button unten, um eine geschützte Verbindung herzustellen.*'
                 )
-                .setFooter({ text: 'Missbrauch des Ticket-Systems wird bestraft.' });
+                .addFields({ name: '⚡ Status', value: '🟢 Bereit / Online', inline: true })
+                .setTimestamp()
+                .setFooter({ text: 'Barrio Netzwerksicherheit', iconURL: interaction.guild.iconURL() });
 
-            // Der Button zum Öffnen. Die customId speichert wichtige Infos für später!
+            // Button-Daten (IDs werden in der customId gespeichert, um die DB zu entlasten)
             const openButton = new ButtonBuilder()
                 .setCustomId(`ticket_open:${teamRole.id}:${category.id}`)
-                .setLabel('✉️ Funkkanal öffnen')
+                .setLabel('Funkverbindung aufbauen')
+                .setEmoji('📟')
                 .setStyle(ButtonStyle.Primary);
 
             const row = new ActionRowBuilder().addComponents(openButton);
 
-            // Panel in den Zielkanal senden
             await targetChannel.send({ embeds: [panelEmbed], components: [row] });
 
             logger.info(`[Ticket] Setup abgeschlossen von ${interaction.user.tag} in ${interaction.guild.name}`);
 
             await InteractionHelper.safeEditReply(interaction, {
-                content: `✅ Das Ticket-Panel wurde erfolgreich in ${targetChannel} eingerichtet!`
+                content: `✅ Das neue Ticket-Panel wurde erfolgreich in ${targetChannel} eingerichtet!`
             });
 
         } catch (error) {
