@@ -34,38 +34,36 @@ export default {
                         .setRequired(false))),
 
     async execute(interaction) {
-        try {
-            const deferSuccess = await InteractionHelper.safeDefer(interaction);
-            if (!deferSuccess) {
-                logger.warn(`Welcome interaction defer failed`, {
-                    userId: interaction.user.id,
-                    guildId: interaction.guildId,
-                    commandName: 'welcome'
-                });
-                return;
-            }
-        } catch (deferError) {
-            logger.error(`Welcome defer error`, { error: deferError.message });
+        // Interaktion frühzeitig flüchtig (ephemeral) aufschieben
+        const deferSuccess = await InteractionHelper.safeDefer(interaction, { flags: MessageFlags.Ephemeral });
+        if (!deferSuccess) {
+            logger.warn(`Welcome interaction defer failed`, {
+                userId: interaction.user.id,
+                guildId: interaction.guildId,
+                commandName: 'welcome'
+            });
             return;
         }
 
         const { options, guild, client } = interaction;
 
+        // Berechtigungsprüfung
         if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)) {
             return await InteractionHelper.safeEditReply(interaction, {
-                embeds: [errorEmbed('Missing Permissions', 'You need the **Manage Server** permission to use `/welcome`.')],
-                flags: MessageFlags.Ephemeral
+                embeds: [errorEmbed('Missing Permissions', 'You need the **Manage Server** permission to use `/welcome`.')]
             });
         }
 
         const subcommand = options.getSubcommand();
 
+        // ── Subcommand: Setup ─────────────────────────────────────────────────
         if (subcommand === 'setup') {
             const channel = options.getChannel('channel');
             const message = options.getString('message');
             const image = options.getString('image');
             const ping = options.getBoolean('ping') ?? false;
 
+            // Existierende Konfiguration prüfen
             const existingConfig = await getWelcomeConfig(client, guild.id);
             if (existingConfig?.channelId) {
                 logger.info(`[Welcome] Setup blocked because config already exists in channel ${existingConfig.channelId} for guild ${guild.id}`);
@@ -73,33 +71,35 @@ export default {
                     embeds: [errorEmbed(
                         'Welcome Setup Already Exists',
                         `Welcome is already configured for <#${existingConfig.channelId}>. Use **/welcome config** to customize channel, message, ping, or image.`
-                    )],
-                    flags: MessageFlags.Ephemeral
+                    )]
                 });
             }
             
+            // Validierung: Nachricht vorhanden?
             if (!message || message.trim().length === 0) {
                 logger.warn(`[Welcome] Empty message provided by ${interaction.user.tag} in ${guild.name}`);
                 return await InteractionHelper.safeEditReply(interaction, {
-                    embeds: [errorEmbed('Invalid Input', 'Welcome message cannot be empty')],
-                    flags: MessageFlags.Ephemeral
+                    embeds: [errorEmbed('Invalid Input', 'Welcome message cannot be empty')]
                 });
             }
 
-            
+            // Validierung: Bild-URL valide?
             if (image) {
                 try {
-                    new URL(image);
+                    const url = new URL(image);
+                    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+                        throw new Error('Invalid protocol');
+                    }
                 } catch (e) {
                     logger.warn(`[Welcome] Invalid image URL provided by ${interaction.user.tag}: ${image}`);
                     return await InteractionHelper.safeEditReply(interaction, {
-                        embeds: [errorEmbed('Invalid Image URL', 'Please provide a valid image URL (must start with http:// or https://')],
-                        flags: MessageFlags.Ephemeral
+                        embeds: [errorEmbed('Invalid Image URL', 'Please provide a valid image URL (must start with http:// or https://)')]
                     });
                 }
             }
 
             try {
+                // Konfiguration in der Datenbank speichern
                 await updateWelcomeConfig(client, guild.id, {
                     enabled: true,
                     channelId: channel.id,
@@ -110,6 +110,7 @@ export default {
 
                 logger.info(`[Welcome] Setup configured by ${interaction.user.tag} for guild ${guild.name} (${guild.id})`);
 
+                // Vorschau-Text generieren
                 const previewMessage = formatWelcomeMessage(message, {
                     user: interaction.user,
                     guild
@@ -138,13 +139,9 @@ export default {
                         'Setup Failed',
                         'An error occurred while configuring the welcome system. Please try again.',
                         { showDetails: true }
-                    )],
-                    flags: MessageFlags.Ephemeral
+                    )]
                 });
             }
         }
     },
 };
-
-
-
