@@ -3,7 +3,7 @@ import { SlashCommandBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder
 import { createEmbed, errorEmbed, infoEmbed, successEmbed } from '../../utils/embeds.js';
 import { getGuildConfig, setGuildConfig } from '../../services/guildConfig.js';
 import { handleInteractionError, withErrorHandling, createError, ErrorTypes } from '../../utils/errorHandler.js';
-import { removeVerification, verifyUser } from '../../services/verificationService.js';
+import { removeVerification } from '../../services/verificationService.js';
 import { ContextualMessages } from '../../utils/messageTemplates.js';
 import { logger } from '../../utils/logger.js';
 import { InteractionHelper } from '../../utils/interactionHelper.js';
@@ -98,6 +98,8 @@ export default {
     }
 };
 
+// ─── Setup Subcommand Handler ────────────────────────────────────────────────
+
 async function handleSetup(interaction, guild, client) {
     const verificationChannel = interaction.options.getChannel("verification_channel");
     const verifiedRole = interaction.options.getRole("verified_role");
@@ -114,6 +116,7 @@ async function handleSetup(interaction, guild, client) {
         );
     }
 
+    // Channel-spezifische Berechtigungen prüfen
     const requiredChannelPermissions = [
         PermissionFlagsBits.ViewChannel,
         PermissionFlagsBits.SendMessages,
@@ -132,6 +135,7 @@ async function handleSetup(interaction, guild, client) {
         );
     }
 
+    // Globale Rollenberechtigung prüfen
     if (!botMember.permissions.has(PermissionFlagsBits.ManageRoles)) {
         throw createError(
             "Missing ManageRoles permission",
@@ -141,6 +145,7 @@ async function handleSetup(interaction, guild, client) {
         );
     }
 
+    // Validierung der Rolle
     if (verifiedRole.id === guild.id || verifiedRole.managed) {
         throw createError(
             'Invalid verified role selected',
@@ -150,6 +155,7 @@ async function handleSetup(interaction, guild, client) {
         );
     }
 
+    // Rollenhierarchie prüfen
     const botRole = botMember.roles.highest;
     if (verifiedRole.position >= botRole.position) {
         throw createError(
@@ -160,6 +166,7 @@ async function handleSetup(interaction, guild, client) {
         );
     }
 
+    // Konflikte mit anderen Systemen prüfen
     const guildConfig = await getGuildConfig(client, guild.id);
     const welcomeConfig = await getWelcomeConfig(client, guild.id);
     const hasAutoVerifyEnabled = Boolean(guildConfig.verification?.autoVerify?.enabled);
@@ -201,6 +208,7 @@ async function handleSetup(interaction, guild, client) {
         components: [verifyButton]
     });
 
+    // Konfiguration speichern
     guildConfig.verification = {
         enabled: true,
         channelId: verificationChannel.id,
@@ -224,43 +232,32 @@ async function handleSetup(interaction, guild, client) {
     });
 }
 
+// ─── Remove Subcommand Handler ────────────────────────────────────────────────
+
 async function handleRemove(interaction, guild, client) {
     const targetUser = interaction.options.getUser("user");
     
-    try {
-        const result = await removeVerification(client, guild.id, targetUser.id, {
-            moderatorId: interaction.user.id,
-            reason: 'admin_removal'
-        });
+    // Da wir withErrorHandling im execute nutzen, reicht es, Fehler hier hochzuwerfen,
+    // es sei denn, ein spezifischer Service-Response-Zustand muss abgefangen werden.
+    const result = await removeVerification(client, guild.id, targetUser.id, {
+        moderatorId: interaction.user.id,
+        reason: 'admin_removal'
+    });
 
-        if (!result.success) {
-            if (result.notVerified) {
-                return await InteractionHelper.safeReply(interaction, {
-                    embeds: [infoEmbed("Not Verified", `${targetUser.tag} does not currently have the verified role.`)],
-                    flags: MessageFlags.Ephemeral
-                });
-            }
-        }
-
-        logger.info('Verification removed via command', {
-            guildId: guild.id,
-            targetUserId: targetUser.id,
-            moderatorId: interaction.user.id
-        });
-
+    if (!result.success && result.notVerified) {
         return await InteractionHelper.safeReply(interaction, {
-            embeds: [successEmbed("Verification Removed", `Verification removed from ${targetUser.tag}.`)]
+            embeds: [infoEmbed("Not Verified", `${targetUser.tag} does not currently have the verified role.`)],
+            flags: MessageFlags.Ephemeral
         });
-
-    } catch (error) {
-        await handleInteractionError(
-            interaction,
-            error,
-            { command: 'verification', subcommand: 'remove' }
-        );
     }
+
+    logger.info('Verification removed via command', {
+        guildId: guild.id,
+        targetUserId: targetUser.id,
+        moderatorId: interaction.user.id
+    });
+
+    return await InteractionHelper.safeReply(interaction, {
+        embeds: [successEmbed("Verification Removed", `Verification removed from ${targetUser.tag}.`)]
+    });
 }
-
-
-
-
