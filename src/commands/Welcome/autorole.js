@@ -1,10 +1,12 @@
 import { getColor } from '../../config/bot.js';
-import { SlashCommandBuilder, PermissionFlagsBits, ChannelType, EmbedBuilder, MessageFlags } from 'discord.js';
+import { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, MessageFlags } from 'discord.js';
 import { getWelcomeConfig, updateWelcomeConfig } from '../../utils/database.js';
 import { logger } from '../../utils/logger.js';
 import { errorEmbed } from '../../utils/embeds.js';
 import { InteractionHelper } from '../../utils/interactionHelper.js';
 import { getGuildConfig } from '../../services/guildConfig.js';
+
+// ─── Hilfsfunktionen ──────────────────────────────────────────────────────────
 
 function createAutoroleInfoEmbed(description) {
     return new EmbedBuilder()
@@ -12,6 +14,21 @@ function createAutoroleInfoEmbed(description) {
         .setDescription(description)
         .setFooter({ text: new Date().toLocaleString() });
 }
+
+function checkVerificationConflict(guildConfig) {
+    const verificationEnabled = Boolean(guildConfig.verification?.enabled);
+    const autoVerifyEnabled = Boolean(guildConfig.verification?.autoVerify?.enabled);
+
+    return {
+        hasConflict: verificationEnabled || autoVerifyEnabled,
+        summary: [
+            verificationEnabled ? 'Verification system is enabled' : null,
+            autoVerifyEnabled ? 'AutoVerify is enabled' : null
+        ].filter(Boolean).join('\n')
+    };
+}
+
+// ─── Main Export ──────────────────────────────────────────────────────────────
 
 export default {
     data: new SlashCommandBuilder()
@@ -40,7 +57,7 @@ export default {
                 .setDescription('List all auto-assigned roles')),
 
     async execute(interaction) {
-        const deferSuccess = await InteractionHelper.safeDefer(interaction);
+        const deferSuccess = await InteractionHelper.safeDefer(interaction, { flags: MessageFlags.Ephemeral });
         if (!deferSuccess) {
             logger.warn(`Autorole interaction defer failed`, {
                 userId: interaction.user.id,
@@ -57,17 +74,16 @@ export default {
             });
         }
 
-    const { options, guild, client } = interaction;
+        const { options, guild, client } = interaction;
         const subcommand = options.getSubcommand();
 
+        // ── Subcommand: Add ───────────────────────────────────────────────────
         if (subcommand === 'add') {
             const role = options.getRole('role');
-
             const guildConfig = await getGuildConfig(client, guild.id);
-            const verificationEnabled = Boolean(guildConfig.verification?.enabled);
-            const autoVerifyEnabled = Boolean(guildConfig.verification?.autoVerify?.enabled);
+            const conflict = checkVerificationConflict(guildConfig);
 
-            if (verificationEnabled || autoVerifyEnabled) {
+            if (conflict.hasConflict) {
                 return InteractionHelper.safeEditReply(interaction, {
                     embeds: [errorEmbed(
                         'Setup Conflict',
@@ -79,7 +95,7 @@ export default {
             
             if (role.position >= guild.members.me.roles.highest.position) {
                 logger.warn(`[Autorole] User ${interaction.user.tag} tried to add role ${role.name} (${role.id}) higher than bot's highest role in ${guild.name}`);
-                return InteractionHelper.safeReply(interaction, {
+                return InteractionHelper.safeEditReply(interaction, {
                     embeds: [errorEmbed('Role Too High', "I can't assign roles that are higher than my highest role.")],
                     flags: MessageFlags.Ephemeral
                 });
@@ -89,7 +105,6 @@ export default {
                 const config = await getWelcomeConfig(client, guild.id);
                 const existingRoles = config.roleIds || [];
                 const currentRoleId = existingRoles[0] || null;
-                
                 
                 if (currentRoleId === role.id) {
                     logger.info(`[Autorole] User ${interaction.user.tag} tried to add duplicate role ${role.name} (${role.id}) in ${guild.name}`);
@@ -125,6 +140,7 @@ export default {
             }
         } 
         
+        // ── Subcommand: Remove ────────────────────────────────────────────────
         else if (subcommand === 'remove') {
             const role = options.getRole('role');
 
@@ -164,30 +180,26 @@ export default {
             }
         }
         
+        // ── Subcommand: List ──────────────────────────────────────────────────
         else if (subcommand === 'list') {
             try {
                 const guildConfig = await getGuildConfig(client, guild.id);
-                const verificationEnabled = Boolean(guildConfig.verification?.enabled);
-                const autoVerifyEnabled = Boolean(guildConfig.verification?.autoVerify?.enabled);
-                const conflictSummary = [
-                    verificationEnabled ? 'Verification system is enabled' : null,
-                    autoVerifyEnabled ? 'AutoVerify is enabled' : null
-                ].filter(Boolean).join('\n');
+                const conflict = checkVerificationConflict(guildConfig);
+                const blockNotice = conflict.summary ? `\n\n⚠️ Setup blockers:\n${conflict.summary}` : '';
 
                 const config = await getWelcomeConfig(client, guild.id);
                 const autoRoles = Array.isArray(config.roleIds) ? config.roleIds : [];
 
+                // Sicherstellen, dass das System auf ein Rollen-Limit von maximal 1 limitiert bleibt
                 const singleRoleIds = autoRoles.length > 1 ? [autoRoles[0]] : autoRoles;
                 if (singleRoleIds.length !== autoRoles.length) {
-                    await updateWelcomeConfig(client, guild.id, {
-                        roleIds: singleRoleIds
-                    });
+                    await updateWelcomeConfig(client, guild.id, { roleIds: singleRoleIds });
                     logger.info(`[Autorole] Trimmed auto-role list to one role in ${interaction.guild.name}`);
                 }
 
                 if (singleRoleIds.length === 0) {
                     return InteractionHelper.safeEditReply(interaction, {
-                        embeds: [createAutoroleInfoEmbed(`ℹ️ No role is set to be auto-assigned.${conflictSummary ? `\n\n⚠️ Setup blockers:\n${conflictSummary}` : ''}`)],
+                        embeds: [createAutoroleInfoEmbed(`ℹ️ No role is set to be auto-assigned.${blockNotice}`)],
                         flags: MessageFlags.Ephemeral
                     });
                 }
@@ -208,14 +220,12 @@ export default {
                 if (invalidRoleIds.length > 0) {
                     logger.info(`[Autorole] Cleaning up ${invalidRoleIds.length} invalid role(s) from guild ${interaction.guild.name}`);
                     const updatedRoles = singleRoleIds.filter(id => !invalidRoleIds.includes(id));
-                    await updateWelcomeConfig(client, guild.id, {
-                        roleIds: updatedRoles
-                    });
+                    await updateWelcomeConfig(client, guild.id, { roleIds: updatedRoles });
                 }
 
                 if (validRoles.length === 0) {
                     return InteractionHelper.safeEditReply(interaction, {
-                        embeds: [createAutoroleInfoEmbed(`ℹ️ No valid auto-role found. Any invalid role has been removed.${conflictSummary ? `\n\n⚠️ Setup blockers:\n${conflictSummary}` : ''}`)],
+                        embeds: [createAutoroleInfoEmbed(`ℹ️ No valid auto-role found. Any invalid role has been removed.${blockNotice}`)],
                         flags: MessageFlags.Ephemeral
                     });
                 }
@@ -223,7 +233,7 @@ export default {
                 const embed = new EmbedBuilder()
                     .setColor(getColor('info'))
                     .setTitle('Auto-Assigned Role')
-                    .setDescription(`${validRoles[0]}${conflictSummary ? `\n\n⚠️ Setup blockers:\n${conflictSummary}` : ''}`)
+                    .setDescription(`${validRoles[0]}${blockNotice}`)
                     .setFooter({ text: 'Only one auto-role can be configured.' });
 
                 await InteractionHelper.safeEditReply(interaction, {
@@ -245,6 +255,4 @@ export default {
         }
     },
 };
-
-
 
