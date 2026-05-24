@@ -9,40 +9,41 @@ import { handleUpdate } from './modules/serverstats_update.js';
 import { handleDelete } from './modules/serverstats_delete.js';
 
 import { InteractionHelper } from '../../utils/interactionHelper.js';
+
 export default {
     data: new SlashCommandBuilder()
         .setName("serverstats")
-        .setDescription("Manage server statistics that track member counts and channel data")
+        .setDescription("Verwalte Server-Statistiken, die Mitgliederzahlen und Kanaldaten erfassen")
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels)
         .addSubcommand(subcommand =>
             subcommand
                 .setName("create")
-                .setDescription("Create a new statistics tracker channel in a category")
+                .setDescription("Erstelle einen neuen Statistik-Tracker-Kanal in einer Kategorie")
                 .addStringOption(option =>
                     option
                         .setName("type")
-                        .setDescription("The type of statistics to track")
+                        .setDescription("Der Typ der zu erfassenden Statistik")
                         .setRequired(true)
                         .addChoices(
-                            { name: "members + bots", value: "members" },
-                            { name: "members only", value: "members_only" },
-                            { name: "bots only", value: "bots" }
+                            { name: "Mitglieder + Bots", value: "members" },
+                            { name: "Nur Mitglieder", value: "members_only" },
+                            { name: "Nur Bots", value: "bots" }
                         )
                 )
                 .addStringOption(option =>
                     option
                         .setName("channel_type")
-                        .setDescription("The channel type to create for this tracker")
+                        .setDescription("Der Kanaltyp, der für diesen Tracker erstellt werden soll")
                         .setRequired(true)
                         .addChoices(
-                            { name: "voice channel (recommended)", value: "voice" },
-                            { name: "text channel", value: "text" }
+                            { name: "Sprachkanal (empfohlen)", value: "voice" },
+                            { name: "Textkanal", value: "text" }
                         )
                 )
                 .addChannelOption(option =>
                     option
                         .setName("category")
-                        .setDescription("The category where the statistics tracker channel will be created")
+                        .setDescription("Die Kategorie, in der der Statistik-Kanal erstellt wird")
                         .setRequired(true)
                         .addChannelTypes(ChannelType.GuildCategory)
                 )
@@ -50,38 +51,38 @@ export default {
         .addSubcommand(subcommand =>
             subcommand
                 .setName("list")
-                .setDescription("List all statistics trackers for this server")
+                .setDescription("Liste alle aktiven Statistik-Tracker für diesen Server auf")
         )
         .addSubcommand(subcommand =>
             subcommand
                 .setName("update")
-                .setDescription("Update an existing statistics tracker")
+                .setDescription("Aktualisiere die Einstellungen eines bestehenden Statistik-Trackers")
                 .addStringOption(option =>
                     option
                         .setName("counter-id")
-                        .setDescription("The ID of the tracker to update")
+                        .setDescription("Die ID des Trackers, der aktualisiert werden soll")
                         .setRequired(true)
                 )
                 .addStringOption(option =>
                     option
                         .setName("type")
-                        .setDescription("The new tracker type")
+                        .setDescription("Der neue Statistik-Typ")
                         .setRequired(false)
                         .addChoices(
-                            { name: "members + bots", value: "members" },
-                            { name: "members only", value: "members_only" },
-                            { name: "bots only", value: "bots" }
+                            { name: "Mitglieder + Bots", value: "members" },
+                            { name: "Nur Mitglieder", value: "members_only" },
+                            { name: "Nur Bots", value: "bots" }
                         )
                 )
         )
         .addSubcommand(subcommand =>
             subcommand
                 .setName("delete")
-                .setDescription("Delete an existing statistics tracker")
+                .setDescription("Lösche einen bestehenden Statistik-Tracker")
                 .addStringOption(option =>
                     option
                         .setName("counter-id")
-                        .setDescription("The ID of the tracker to delete")
+                        .setDescription("Die ID des Trackers, der gelöscht werden soll")
                         .setRequired(true)
                 )
         ),
@@ -105,16 +106,16 @@ export default {
                     break;
                 default:
                     await InteractionHelper.safeReply(interaction, {
-                        embeds: [errorEmbed("Unknown subcommand.")],
+                        embeds: [errorEmbed("Unbekannter Unterbefehl.")],
                         flags: MessageFlags.Ephemeral
                     });
             }
         } catch (error) {
-            logger.error(`Error in serverstats ${subcommand}:`, error);
+            logger.error(`Fehler bei Serverstats im Subcommand ${subcommand}:`, error);
             
             const errorEmbedMsg = createEmbed({ 
-                title: "❌ Error", 
-                description: "An error occurred while processing your request.",
+                title: "❌ Fehler", 
+                description: "Beim Verarbeiten der Anfrage ist ein Fehler aufgetreten.",
                 color: getColor('error')
             });
 
@@ -126,7 +127,6 @@ export default {
         }
     }
 };
-
 
 
 
