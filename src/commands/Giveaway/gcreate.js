@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, PermissionFlagsBits, PermissionsBitField, ChannelType, MessageFlags } from 'discord.js';
+import { SlashCommandBuilder, PermissionFlagsBits, ChannelType, MessageFlags } from 'discord.js';
 import { errorEmbed, successEmbed } from '../../utils/embeds.js';
 import { logger } from '../../utils/logger.js';
 import { TitanBotError, ErrorTypes, handleInteractionError } from '../../utils/errorHandler.js';
@@ -14,35 +14,36 @@ import { logEvent, EVENT_TYPES } from '../../services/loggingService.js';
 import { InteractionHelper } from '../../utils/interactionHelper.js';
 
 export default {
+    // Registrierung des Slash-Commands auf Deutsch
     data: new SlashCommandBuilder()
-        .setName("gcreate")
-        .setDescription("Starts a new giveaway in a specified channel.")
+        .setName("verlosung")
+        .setDescription("Startet eine neue Verlosung im Barrio.")
         .addStringOption((option) =>
             option
-                .setName("duration")
+                .setName("dauer")
                 .setDescription(
-                    "How long the giveaway should last (e.g., 1h, 30m, 5d).",
+                    "Wie lange die Verlosung gehen soll (z.B. 1h, 30m, 5d).",
                 )
                 .setRequired(true),
         )
         .addIntegerOption((option) =>
             option
-                .setName("winners")
-                .setDescription("The number of winners to pick.")
+                .setName("gewinner")
+                .setDescription("Die Anzahl der gezogenen Gewinner.")
                 .setMinValue(1)
                 .setMaxValue(10)
                 .setRequired(true),
         )
         .addStringOption((option) =>
             option
-                .setName("prize")
-                .setDescription("The prize being given away.")
+                .setName("preis")
+                .setDescription("Der Gegenstand / Betrag, der verlost wird.")
                 .setRequired(true),
         )
         .addChannelOption((option) =>
             option
-                .setName("channel")
-                .setDescription("The channel to send the giveaway to (defaults to current channel).")
+                .setName("kanal")
+                .setDescription("Der Kanal, in den die Verlosung gepostet wird (Standard: aktueller Kanal).")
                 .addChannelTypes(ChannelType.GuildText)
                 .setRequired(false),
         )
@@ -55,7 +56,7 @@ export default {
                 throw new TitanBotError(
                     'Giveaway command used outside guild',
                     ErrorTypes.VALIDATION,
-                    'This command can only be used in a server.',
+                    'Dieser Befehl kann nur auf dem Aztecas-Server genutzt werden, Amigo.',
                     { userId: interaction.user.id }
                 );
             }
@@ -65,7 +66,7 @@ export default {
                 throw new TitanBotError(
                     'User lacks ManageGuild permission',
                     ErrorTypes.PERMISSION,
-                    "You need the 'Manage Server' permission to start a giveaway.",
+                    "Du gehörst nicht zum Management. Dir fehlen die Rechte für eine Verlosung.",
                     { userId: interaction.user.id, guildId: interaction.guildId }
                 );
             }
@@ -73,10 +74,10 @@ export default {
             logger.info(`Giveaway creation started by ${interaction.user.tag} in guild ${interaction.guildId}`);
 
             
-            const durationString = interaction.options.getString("duration");
-            const winnerCount = interaction.options.getInteger("winners");
-            const prize = interaction.options.getString("prize");
-            const targetChannel = interaction.options.getChannel("channel") || interaction.channel;
+            const durationString = interaction.options.getString("dauer");
+            const winnerCount = interaction.options.getInteger("gewinner");
+            const prize = interaction.options.getString("preis");
+            const targetChannel = interaction.options.getChannel("kanal") || interaction.channel;
 
             
             const durationMs = parseDuration(durationString);
@@ -88,7 +89,7 @@ export default {
                 throw new TitanBotError(
                     'Target channel is not text-based',
                     ErrorTypes.VALIDATION,
-                    'The channel must be a text channel.',
+                    'Das muss ein normaler Textkanal sein, Loco.',
                     { channelId: targetChannel.id, channelType: targetChannel.type }
                 );
             }
@@ -117,7 +118,7 @@ export default {
             
             
             const giveawayMessage = await targetChannel.send({
-                content: "🎉 **NEW GIVEAWAY** 🎉",
+                content: "🎉 **NEUE VERLOSUNG IM BARRIO** 🎉",
                 embeds: [embed],
                 components: [row],
             });
@@ -141,27 +142,27 @@ export default {
                     guildId: interaction.guildId,
                     eventType: EVENT_TYPES.GIVEAWAY_CREATE,
                     data: {
-                        description: `Giveaway created: ${prizeName}`,
+                        description: `Verlosung gestartet von: ${prizeName}`,
                         channelId: targetChannel.id,
                         userId: interaction.user.id,
                         fields: [
                             {
-                                name: '🎁 Prize',
+                                name: '🎁 Gewinn',
                                 value: prizeName,
                                 inline: true
                             },
                             {
-                                name: '🏆 Winners',
+                                name: '🏆 Gewinneranzahl',
                                 value: winnerCount.toString(),
                                 inline: true
                             },
                             {
-                                name: '⏰ Duration',
+                                name: '⏰ Laufzeit',
                                 value: durationString,
                                 inline: true
                             },
                             {
-                                name: '📍 Channel',
+                                name: '📍 Barrio-Kanal',
                                 value: targetChannel.toString(),
                                 inline: true
                             }
@@ -178,8 +179,8 @@ export default {
             await InteractionHelper.safeReply(interaction, {
                 embeds: [
                     successEmbed(
-                        `Giveaway Started! 🎉`,
-                        `A new giveaway for **${prizeName}** has been started in ${targetChannel} and will end in **${durationString}**.`,
+                        `Verlosung gestartet! 🎉`,
+                        `Eine neue Verlosung für **${prizeName}** wurde erfolgreich in ${targetChannel} gestartet und endet in **${durationString}**.`,
                     ),
                 ],
                 flags: MessageFlags.Ephemeral,
@@ -188,12 +189,11 @@ export default {
         } catch (error) {
             await handleInteractionError(interaction, error, {
                 type: 'command',
-                commandName: 'gcreate',
+                commandName: 'verlosung',
                 context: 'giveaway_creation'
             });
         }
     },
 };
-
 
 
