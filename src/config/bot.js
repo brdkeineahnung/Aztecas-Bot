@@ -1,33 +1,19 @@
 import { logger } from '../utils/logger.js';
 
-
 export const botConfig = {
   // =========================
   // BOT PRESENCE (what users see under the bot name)
   // =========================
-  // `status` options:
-  // - "online"    = green dot
-  // - "idle"      = yellow moon
-  // - "dnd"       = red do-not-disturb
-  // - "invisible" = appears offline
   presence: {
-    // Current online state shown on Discord.
+    // Current online state shown on Discord ("online", "idle", "dnd", "invisible")
     status: "online",
 
     // Activity lines shown under the bot name.
-    // `type` number mapping from Discord:
-    // 0 = Playing
-    // 1 = Streaming
-    // 2 = Listening
-    // 3 = Watching
-    // 4 = Custom
-    // 5 = Competing
+    // 0 = Playing, 1 = Streaming, 2 = Listening, 3 = Watching, 4 = Custom, 5 = Competing
     activities: [
       {
-        // Text users will see (example: "Playing /help | Titan Bot").
-        name: "Made with ❤️",
-        // Activity type number (0 = Playing).
-        type: 0, 
+        name: "Aztecas is The Hood🩵",
+        type: 2, // 2 = Listening
       },
     ],
   },
@@ -36,337 +22,195 @@ export const botConfig = {
   // COMMAND BEHAVIOR
   // =========================
   commands: {
-    // Bot owner user IDs (comma-separated in OWNER_IDS env var).
-    // Owners can access owner/admin-level bot commands.
     owners: process.env.OWNER_IDS?.split(",") || [],
-
-    // Default wait time between command uses (in seconds).
     defaultCooldown: 3, 
-
-    // If true, old commands are removed before re-registering.
     deleteCommands: false,
-
-    // Optional server ID used for testing slash commands quickly.
     testGuildId: process.env.TEST_GUILD_ID,
   },
 
   // =========================
-  // APPLICATIONS SYSTEM
+  // APPLICATIONS SYSTEM (Fraktions-Bewerbungen)
   // =========================
   applications: {
-    // Default questions shown when someone fills out an application.
     defaultQuestions: [
-      { question: "What is your name?", required: true },
-      { question: "How old are you?", required: true },
-      { question: "Why do you want to join?", required: true },
+      { question: "Wie heißt du Reallife / Ingame?", required: true },
+      { question: "Wie alt bist du?", required: true },
+      { question: "Warum möchtest du gerade den Aztecas beitreten?", required: true },
+      { question: "Bringe eine kurze Übersicht deiner bisherigen Fraktionserfahrung mit.", required: true },
     ],
 
-    // Embed colors by application status.
-    statusColors: {
-      pending: "#FFA500",
-      approved: "#00FF00",
-      denied: "#FF0000",
+    embedColors: {
+      pending: "#FFA500", // Orange für offene Bewerbungen
+      approved: "#00FF00", // Grün für Angenommen
+      denied: "#FF0000", // Rot für Abgelehnt
     },
 
-    // How long users must wait before submitting another application (hours).
     applicationCooldown: 24, 
-
-    // Auto-delete denied applications after this many days.
     deleteDeniedAfter: 7, 
-
-    // Auto-delete approved applications after this many days.
     deleteApprovedAfter: 30, 
-
-    // Role IDs allowed to manage applications.
-    managerRoles: [], // Will be populated from environment or database
+    managerRoles: [], 
   },
 
   // =========================
   // EMBED COLORS & BRANDING
   // =========================
-  // IMPORTANT: This is the SINGLE SOURCE OF TRUTH for all bot colors
   embeds: {
     colors: {
-      // Main brand colors.
-      primary: "#336699", 
-      secondary: "#2F3136", 
+      // Hauptfarben im Aztecas-Stil
+      primary: "#00F0FF",   // Knalliges Fraktions-Türkis
+      secondary: "#1A2E33", // Edles, dunkles Cyan-Grau für Kontraste
 
-      // Standard status colors for success/error/warning/info messages.
-      success: "#57F287", 
-      error: "#ED4245", 
-      warning: "#FEE75C", 
-      info: "#3498DB", 
+      // Standard Status-Farben
+      success: "#00FF87",  // Frisches Grün
+      error: "#FF3B30",    // Klares Rot
+      warning: "#FFCC00",  // Signal-Gelb
+      info: "#00A3FF",     // Informations-Blau
 
-      // Neutral utility colors.
+      // Neutrale Farb-Palette
       light: "#FFFFFF",
-      dark: "#202225",
-      gray: "#99AAB5",
+      dark: "#0F1115",
+      gray: "#6E848C",
 
-      // Discord-style palette shortcuts.
-      blurple: "#5865F2",
-      green: "#57F287",
-      yellow: "#FEE75C",
-      fuchsia: "#EB459E",
-      red: "#ED4245",
+      // Shortcuts im Türkis/Dark-Schema überschrieben
+      blurple: "#00D1FF",
+      green: "#00FF87",
+      yellow: "#FFCC00",
+      fuchsia: "#E91E63",
+      red: "#FF3B30",
       black: "#000000",
 
-      // Feature-specific colors.
+      // Feature-spezifische Farben
       giveaway: {
-        active: "#57F287",
-        ended: "#ED4245",
+        active: "#00F0FF",
+        ended: "#6E848C",
       },
       ticket: {
-        open: "#57F287",
-        claimed: "#FAA61A",
-        closed: "#ED4245",
-        pending: "#99AAB5",
+        open: "#00FF87",
+        claimed: "#FFCC00",
+        closed: "#FF3B30",
+        pending: "#6E848C",
       },
-      economy: "#F1C40F",
+      economy: "#00F0FF",
       birthday: "#E91E63",
-      moderation: "#9B59B6",
+      moderation: "#FF3B30",
 
-      // Ticket priority color mapping.
+      // Ticket-Prioritäten farblich abgestuft
       priority: {
-        none: "#95A5A6",
-        low: "#3498db",
-        medium: "#2ecc71",
-        high: "#f1c40f",
-        urgent: "#e74c3c",
+        none: "#6E848C",
+        low: "#00A3FF",
+        medium: "#00FF87",
+        high: "#FFCC00",
+        urgent: "#FF3B30",
       },
     },
     footer: {
-      // Default footer text used in bot embeds.
-      text: "Titan Bot",
-      // Footer icon URL (null = no icon).
-      icon: null,
+      text: "Aztecas Bot • Management System",
+      icon: null, // Hier kannst du eine URL zu eurem Fraktionslogo eintragen
     },
-    // Default thumbnail URL for embeds (null = no thumbnail).
     thumbnail: null,
     author: {
-      // Optional default embed author block.
-      name: null,
+      name: "VIVE LES AZTECAS",
       icon: null,
       url: null,
     },
   },
 
   // =========================
-  // ECONOMY SETTINGS
+  // ECONOMY SETTINGS (In-Game Währung für kleine Spielereien)
   // =========================
   economy: {
     currency: {
-      // Currency display name.
-      name: "coins",
-      // Plural display name.
-      namePlural: "coins",
-      // Currency symbol shown in balances.
-      symbol: "$",
+      name: "Schwarzgeld",
+      namePlural: "Schwarzgeld",
+      symbol: "💵",
     },
-
-    // Starting balance for new users.
-    startingBalance: 0,
-
-    // Maximum bank amount before upgrades (if upgrades are used).
-    baseBankCapacity: 100000,
-
-    // Daily reward amount.
-    dailyAmount: 100,
-
-    // Work command random payout range.
-    workMin: 10,
-    workMax: 100,
-
-    // Beg command random payout range.
-    begMin: 5,
-    begMax: 50,
-
-    // Chance to succeed when robbing (0.4 = 40%).
-    robSuccessRate: 0.4,
-
-    // Jail time after failed rob (milliseconds).
-    // 3600000 = 1 hour.
-    robFailJailTime: 3600000, 
+    startingBalance: 250,
+    baseBankCapacity: 500000,
+    dailyAmount: 250,
+    workMin: 50,
+    workMax: 250,
+    begMin: 10,
+    begMax: 80,
+    robSuccessRate: 0.45,
+    robFailJailTime: 1800000, // 30 Minuten Knast bei Fehlversuch
   },
 
-  // =========================
-  // SHOP SETTINGS
-  // =========================
-  // Add shop defaults here when needed.
-  shop: {
-    
-  },
+  shop: {},
 
   // =========================
-  // TICKET SYSTEM
+  // TICKET SYSTEM (Support-Bereich)
   // =========================
   tickets: {
-    // Category ID where new tickets are created (null = no forced category).
     defaultCategory: null,
-
-    // Role IDs allowed to manage/support tickets.
     supportRoles: [],
-
-    // Priority options users/staff can assign.
     priorities: {
-      none: {
-        emoji: "⚪",
-        color: "#95A5A6",
-        label: "None",
-      },
-      low: {
-        emoji: "🟢",
-        color: "#2ECC71",
-        label: "Low",
-      },
-      medium: {
-        emoji: "🟡",
-        color: "#F1C40F",
-        label: "Medium",
-      },
-      high: {
-        emoji: "🔴",
-        color: "#E74C3C",
-        label: "High",
-      },
-      urgent: {
-        emoji: "🚨",
-        color: "#E91E63",
-        label: "Urgent",
-      },
+      none: { emoji: "⚪", color: "#6E848C", label: "Normal" },
+      low: { emoji: "🟢", color: "#00A3FF", label: "Frage" },
+      medium: { emoji: "🟡", color: "#00FF87", label: "Beschwerde" },
+      high: { emoji: "🔴", color: "#FFCC00", label: "Wichtig" },
+      urgent: { emoji: "🚨", color: "#FF3B30", label: "Fraktions-Notfall" },
     },
-
-    // Default priority for new tickets.
     defaultPriority: "none",
-
-    // Category ID where closed tickets are archived.
     archiveCategory: null,
-
-    // Channel ID where ticket logs are sent.
     logChannel: null,
   },
 
-  // =========================
-  // GIVEAWAY SETTINGS
-  // =========================
   giveaways: {
-    // Default giveaway duration in milliseconds.
-    // 86400000 = 24 hours.
     defaultDuration: 86400000, 
-
-    // Allowed winner count range.
     minimumWinners: 1,
     maximumWinners: 10,
-
-    // Allowed giveaway duration range in milliseconds.
-    // 300000 = 5 minutes.
     minimumDuration: 300000, 
-    // 2592000000 = 30 days.
     maximumDuration: 2592000000, 
-
-    // Role IDs allowed to host giveaways.
     allowedRoles: [],
-
-    // Role IDs that bypass giveaway restrictions.
     bypassRoles: [],
   },
 
-  // =========================
-  // BIRTHDAY SETTINGS
-  // =========================
   birthday: {
-    // Role ID given to users on their birthday.
     defaultRole: null,
-
-    // Channel ID where birthday announcements are posted.
     announcementChannel: null,
-
-    // Timezone used to calculate birthday dates.
-    timezone: "UTC",
+    timezone: "Europe/Berlin", // Auf deutsche Zeitzone umgestellt
   },
 
   // =========================
   // VERIFICATION SETTINGS
   // =========================
   verification: {
-    // Message shown when posting the verification panel.
-    defaultMessage: "Click the button below to verify yourself and gain access to the server!",
-
-    // Text on the verification button.
-    defaultButtonText: "Verify",
-
-    // Automatic verification behavior.
+    defaultMessage: "Willkommen im Barrio! Klicke unten auf den Button, um dich zu verifizieren und Zugriff auf die internen Kanäle der Aztecas zu erhalten.",
+    defaultButtonText: "Verifizieren 🩵",
     autoVerify: {
-      // How automatic verification decides who is auto-approved:
-      // - "none"        = everyone is auto-verified immediately
-      // - "account_age" = account must be older than set days
-      // - "server_size" = auto-verify everyone only in smaller servers
       defaultCriteria: "none",
-
-      // Days used when `defaultCriteria` is `account_age`.
-      defaultAccountAgeDays: 7,
-
-      // Member count threshold used when `defaultCriteria` is `server_size`.
-      // Example: 1000 means auto-verify if server has fewer than 1000 members.
+      defaultAccountAgeDays: 3,
       serverSizeThreshold: 1000,
-
-      // Allowed safety limits for account-age requirements.
-      // 1 = minimum day, 365 = maximum days.
       minAccountAge: 1,      
       maxAccountAge: 365,    
-
-      // If true, user receives a DM after verification.
       sendDMNotification: true,
-
-      // Human-readable descriptions for each criteria mode.
       criteria: {
-        account_age: "Account must be older than specified days",
-        server_size: "All users if server has less than 1000 members",
-        none: "All users immediately"
+        account_age: "Account-Alter überprüfen",
+        server_size: "Automatisch freigeben",
+        none: "Sofortiger Zutritt"
       }
     },
-
-    // Minimum time between verification attempts (milliseconds).
-    // 5000 = 5 seconds.
     verificationCooldown: 5000,  
-
-    // Maximum failed attempts allowed inside the time window below.
     maxVerificationAttempts: 3,   
-
-    // Time window for counting attempts (milliseconds).
-    // 60000 = 1 minute.
     attemptWindow: 60000,          
-
-    // In-memory safety limits (helps avoid unbounded memory growth).
     maxCooldownEntries: 10000,
     maxAttemptEntries: 10000,
-    // Cleanup frequency for cooldown/attempt maps (milliseconds).
-    // 300000 = 5 minutes.
     cooldownCleanupInterval: 300000, 
-    // Maximum metadata payload size for audit entries (bytes).
     maxAuditMetadataBytes: 4096,
-    // Maximum number of audit entries kept in memory.
     maxInMemoryAuditEntries: 1000,
-  // If true, log every verification action.
-  logAllVerifications: true,
-  // If true, preserve verification audit history.
-  keepAuditTrail: true,
+    logAllVerifications: true,
+    keepAuditTrail: true,
   },
 
   // =========================
   // WELCOME / GOODBYE MESSAGES
   // =========================
   welcome: {
-    // Welcome template posted when a user joins.
-    // Placeholders: {user}, {server}, {memberCount}
     defaultWelcomeMessage:
-      "Welcome {user} to {server}! We now have {memberCount} members!",
-    // Goodbye template posted when a user leaves.
-    // Placeholders: {user}, {memberCount}
+      "¡Hola! {user} hat den Weg ins Barrio der Aztecas gefunden. Wir sind nun {memberCount} Locos!",
     defaultGoodbyeMessage:
-      "{user} has left the server. We now have {memberCount} members.",
-    // Channel ID for welcome messages.
+      "{user} hat das Barrio verlassen. Wir sind verbleibende {memberCount} Mitglieder.",
     defaultWelcomeChannel: null,
-    // Channel ID for goodbye messages.
     defaultGoodbyeChannel: null,
   },
 
@@ -375,87 +219,63 @@ export const botConfig = {
   // =========================
   counters: {
     defaults: {
-      // Default naming/description templates for counter entries.
-      name: "{name} Counter",
-      description: "Server {name} counter",
-      // Channel type used for counters (typically "voice").
+      name: "{name} Zähler",
+      description: "Aztecas {name} Zähler",
       type: "voice",
-      // Channel name format. `{count}` is replaced automatically.
-      channelName: "{name}-{count}",
+      channelName: "{name}: {count}",
     },
     permissions: {
-      // Default denied permissions for the counter channel.
       deny: ["VIEW_CHANNEL"],
-      // Default allowed permissions for the counter channel.
       allow: ["VIEW_CHANNEL", "CONNECT", "SPEAK"],
     },
     messages: {
-      // Default response messages for counter actions.
-      created: "✅ Created counter **{name}**",
-      deleted: "🗑️ Deleted counter **{name}**",
-      updated: "🔄 Updated counter **{name}**",
+      created: "✅ Counter **{name}** wurde im Barrio eingerichtet.",
+      deleted: "🗑️ Counter **{name}** wurde abgerissen.",
+      updated: "🔄 Counter **{name}** aktualisiert.",
     },
     types: {
-      // Built-in counter types and how each count is calculated.
       members: {
-        name: "👥 Members",
-        description: "Total members in the server",
+        name: "🩵 Gesamte Einwohner",
+        description: "Alle User auf dem Discord",
         getCount: (guild) => guild.memberCount.toString(),
       },
       bots: {
-        name: "🤖 Bots",
-        description: "Total bot accounts in the server",
-        getCount: (guild) =>
-          guild.members.cache.filter((m) => m.user.bot).size.toString(),
+        name: "🤖 Techniker",
+        description: "Bot-Accounts im System",
+        getCount: (guild) => guild.members.cache.filter((m) => m.user.bot).size.toString(),
       },
       members_only: {
-        name: "👤 Humans",
-        description: "Total human members (non-bots)",
-        getCount: (guild) =>
-          guild.members.cache.filter((m) => !m.user.bot).size.toString(),
+        name: "👥 Aktive Locos",
+        description: "Echte Fraktionsmitglieder/User",
+        getCount: (guild) => guild.members.cache.filter((m) => !m.user.bot).size.toString(),
       },
     },
   },
 
-  // =========================
-  // GENERIC BOT MESSAGES
-  // =========================
   messages: {
-    noPermission: "You do not have permission to use this command.",
-    cooldownActive: "Please wait {time} before using this command again.",
-    errorOccurred: "An error occurred while executing this command.",
-    missingPermissions:
-      "I am missing required permissions to perform this action.",
-    commandDisabled: "This command has been disabled.",
-    maintenanceMode: "The bot is currently in maintenance mode.",
+    noPermission: "Dafür hast du keine Rechte, Amigo.",
+    cooldownActive: "Mach mal langsam. Warte bitte noch {time}, bevor du den Befehl erneut nutzt.",
+    errorOccurred: "Da ist ein Fehler unterlaufen. Sag dem Management Bescheid!",
+    missingPermissions: "Mir fehlen die nötigen Discord-Rechte, um das zu tun.",
+    commandDisabled: "Dieser Befehl wurde vom Management deaktiviert.",
+    maintenanceMode: "Der Bot macht gerade eine Siesta (Wartungsmodus).",
   },
 
-  // =========================
-  // FEATURE TOGGLES
-  // =========================
-  // Set any feature to `false` to disable it globally.
   features: {
-    // Core systems.
     economy: true,
     leveling: true,
     moderation: true,
     logging: true,
     welcome: true,
-
-    // Community engagement systems.
     tickets: true,
     giveaways: true,
-    birthday: true,
+    birthday: false, // Für FiveM Fraktionen meistens unwichtig
     counter: true,
-
-    // Security and self-service systems.
     verification: true,
     reactionRoles: true,
     joinToCreate: true,
-
-    // Utility/quality-of-life modules.
     voice: true,
-    search: true,
+    search: false,
     tools: true,
     utility: true,
     community: true,
@@ -463,10 +283,8 @@ export const botConfig = {
   },
 };
 
-
 export function validateConfig(config) {
   const errors = [];
-
   
   if (process.env.NODE_ENV !== 'production') {
     logger.debug('Environment variables check:');
@@ -481,27 +299,17 @@ export function validateConfig(config) {
   if (!process.env.DISCORD_TOKEN && !process.env.TOKEN) {
     errors.push("Bot token is required (DISCORD_TOKEN or TOKEN environment variable)");
   }
-
   if (!process.env.CLIENT_ID) {
     errors.push("Client ID is required (CLIENT_ID environment variable)");
-  }
-
-  
+  }  
   if (process.env.NODE_ENV === 'production') {
-    if (!process.env.POSTGRES_HOST) {
-      errors.push("PostgreSQL host is required in production (POSTGRES_HOST environment variable)");
-    }
-    if (!process.env.POSTGRES_USER) {
-      errors.push("PostgreSQL user is required in production (POSTGRES_USER environment variable)");
-    }
-    if (!process.env.POSTGRES_PASSWORD) {
-      errors.push("PostgreSQL password is required in production (POSTGRES_PASSWORD environment variable)");
-    }
+    if (!process.env.POSTGRES_HOST) errors.push("PostgreSQL host is required in production (POSTGRES_HOST environment variable)");
+    if (!process.env.POSTGRES_USER) errors.push("PostgreSQL user is required in production (POSTGRES_USER environment variable)");
+    if (!process.env.POSTGRES_PASSWORD) errors.push("PostgreSQL password is required in production (POSTGRES_PASSWORD environment variable)");
   }
 
   return errors;
 }
-
 
 const configErrors = validateConfig(botConfig);
 if (configErrors.length > 0) {
@@ -511,14 +319,11 @@ if (configErrors.length > 0) {
   }
 }
 
-
 export const BotConfig = botConfig;
 
-export function getColor(path, fallback = "#99AAB5") {
-  
+export function getColor(path, fallback = "#00F0FF") {
   if (typeof path === "number") return path;
   if (typeof path === "string" && path.startsWith("#")) {
-    
     return parseInt(path.replace("#", ""), 16);
   }
   const result = path
@@ -528,7 +333,6 @@ export function getColor(path, fallback = "#99AAB5") {
       botConfig.embeds.colors,
     );
   
-  // Convert the result to integer if it's a hex string
   if (typeof result === "string" && result.startsWith("#")) {
     return parseInt(result.replace("#", ""), 16);
   }
@@ -543,7 +347,3 @@ export function getRandomColor() {
 }
 
 export default botConfig;
-
-
-
-
